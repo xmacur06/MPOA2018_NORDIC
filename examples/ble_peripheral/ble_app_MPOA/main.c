@@ -89,11 +89,11 @@
 #include "nrf_uarte.h"
 #endif
 
+#include "MPU6050_driver.h"
+
 #include "nrf_log.h"
 #include "nrf_log_ctrl.h"
 #include "nrf_log_default_backends.h"
-
-
 
 
 #define DEVICE_NAME                     "MPOA2018"                       /**< Name of device. Will be included in the advertising data. */
@@ -290,7 +290,7 @@ static void timer_timeout_handler(void * p_context)
 {
     // OUR_JOB: Step 3.F, Update temperature and characteristic value.
     nrf_gpio_pin_toggle(26);
-
+    MPU6050_read_sensor_data();
 }
 
 
@@ -306,15 +306,8 @@ static void timers_init(void)
     APP_ERROR_CHECK(err_code);
 
     // Create timers.
-
-    /* YOUR_JOB: Create any timers to be used by the application.
-                 Below is an example of how to create a timer.
-                 For every new timer needed, increase the value of the macro APP_TIMER_MAX_TIMERS by
-                 one.
-       ret_code_t err_code;
-       */
-       err_code = app_timer_create(&m_timer_id, APP_TIMER_MODE_REPEATED, timer_timeout_handler);
-       APP_ERROR_CHECK(err_code);
+    err_code = app_timer_create(&m_timer_id, APP_TIMER_MODE_REPEATED, timer_timeout_handler);
+    APP_ERROR_CHECK(err_code);
 }
 
 
@@ -869,6 +862,8 @@ int main(void)
     bool erase_bonds;
     // Initialize.
     uart_init();
+    twi_init();
+    MPU6050_set_mode(NORMAL);
     log_init();
     timers_init();
     buttons_leds_init(&erase_bonds);
@@ -883,7 +878,7 @@ int main(void)
 
     // Start execution.
     NRF_LOG_INFO("Template example started.");
-   //application_timers_start();
+   application_timers_start();
 
     advertising_start(erase_bonds);
     /******************************/
@@ -892,7 +887,6 @@ int main(void)
     {
         idle_state_handle();
         SEGGER_RTT_WriteString(0, "Main LOOP.\n");
-        
     }
 }
 
