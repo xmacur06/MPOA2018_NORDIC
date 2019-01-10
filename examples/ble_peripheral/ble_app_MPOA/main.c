@@ -53,10 +53,14 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <string.h>
 
 #include "nordic_common.h"
 #include "nrf.h"
+#include "nrf_drv_saadc.h"
+#include "nrf_drv_ppi.h"
+#include "nrf_drv_timer.h"
 #include "app_error.h"
 #include "ble.h"
 #include "ble_hci.h"
@@ -123,7 +127,7 @@
 #define SEC_PARAM_MAX_KEY_SIZE          16                                      /**< Maximum encryption key size. */
 
 #define TX_POWER                        (-16)
-#define SEC_CHAR_TIMER_INTERVAL         APP_TIMER_TICKS(1000)                   // 1000 ms intervals
+#define SEC_CHAR_TIMER_INTERVAL         APP_TIMER_TICKS(5000)                   // 5000 ms intervals
 
 #define DEAD_BEEF                       0xDEADBEEF                              /**< Value used as error code on stack dump, can be used to identify stack location on stack unwind. */
 
@@ -139,8 +143,71 @@ BLE_TS_DEF(m_ts_service);                                                       
 
 APP_TIMER_DEF(m_timer_id);                                                      /**<Timer module>*/
 
+uint16_t Vbatt;
 
 static uint16_t m_conn_handle = BLE_CONN_HANDLE_INVALID;                        /**< Handle of the current connection. */
+
+/***ADC****/
+#define VREF    3.6
+#define BITS10  1024
+#define SAMPLES_IN_BUFFER 1
+volatile uint8_t state = 1;
+
+static const nrf_drv_timer_t m_timer = NRF_DRV_TIMER_INSTANCE(0);
+static nrf_saadc_value_t     m_buffer_pool;
+static nrf_ppi_channel_t     m_ppi_channel;
+
+void saadc_callback(nrf_drv_saadc_evt_t const * p_event)
+{
+    if (p_event->type == NRF_DRV_SAADC_EVT_DONE)
+    {
+        ret_code_t err_code;
+		
+        err_code = nrf_drv_saadc_buffer_convert(p_event->data.done.p_buffer, SAMPLES_IN_BUFFER);
+        APP_ERROR_CHECK(err_code);
+        SEGGER_RTT_printf(0, "ADC data %d.\n", p_event->data.done.p_buffer[0]);
+        Vbatt = (p_event->data.done.p_buffer[0]*VREF*1000)/BITS10;
+        SEGGER_RTT_printf(0, "ADC data %d.\n", Vbatt);
+    }
+}
+
+void saadc_init(void)
+{
+    ret_code_t err_code;
+    nrf_saadc_channel_config_t channel_config =
+        NRF_DRV_SAADC_DEFAULT_CHANNEL_CONFIG_SE(NRF_SAADC_INPUT_AIN0);
+	
+    channel_config.gain = NRF_SAADC_GAIN1_6;
+
+    err_code = nrf_drv_saadc_init(NULL, saadc_callback);
+    APP_ERROR_CHECK(err_code);
+
+    //Configure SAADC channel
+    channel_config.reference = NRF_SAADC_REFERENCE_INTERNAL;                              //Set internal reference of fixed 0.6 volts
+    channel_config.gain = NRF_SAADC_GAIN1_6;                                              //Set input gain to 1/6. The maximum SAADC input voltage is then 0.6V/(1/6)=3.6V. The single ended input range is then 0V-3.6V
+    channel_config.acq_time = NRF_SAADC_ACQTIME_10US;                                     //Set acquisition time. Set low acquisition time to enable maximum sampling frequency of 200kHz. Set high acquisition time to allow maximum source resistance up to 800 kohm, see the SAADC electrical specification in the PS. 
+    channel_config.mode = NRF_SAADC_MODE_SINGLE_ENDED;                                    //Set SAADC as single ended. This means it will only have the positive pin as input, and the negative pin is shorted to ground (0V) internally.
+    channel_config.pin_p = NRF_SAADC_INPUT_VDD;                                          //Select the input pin for the channel. AIN0 pin maps to physical pin P0.02.
+    channel_config.pin_n = NRF_SAADC_INPUT_DISABLED;                                      //Since the SAADC is single ended, the negative pin is disabled. The negative pin is shorted to ground internally.
+    channel_config.resistor_p = NRF_SAADC_RESISTOR_DISABLED;                              //Disable pullup resistor on the input pin
+    channel_config.resistor_n = NRF_SAADC_RESISTOR_DISABLED;                              //Disable pulldown resistor on the input pin
+    err_code = nrf_drv_saadc_channel_init(0, &channel_config);
+    APP_ERROR_CHECK(err_code);
+
+    err_code = nrf_drv_saadc_buffer_convert(&m_buffer_pool,SAMPLES_IN_BUFFER);
+    APP_ERROR_CHECK(err_code);
+
+    APP_ERROR_CHECK(err_code);
+}
+
+void saadc_sampling_trigger(void)
+{
+    ret_code_t err_code;
+  //Event handler is called immediately after conversion is finished.
+    err_code = nrf_drv_saadc_sample(); // Check error
+    APP_ERROR_CHECK(err_code);
+}
+/***END ADC******/
 
 /* YOUR_JOB: Declare all services structure your application is using
  *  BLE_XYZ_DEF(m_xyz);
@@ -154,7 +221,6 @@ static ble_uuid_t m_adv_uuids[] =                                               
 
 
 static void advertising_start(bool erase_bonds);
-
 
 /**@brief   Function for handling app_uart events.
  *
@@ -183,19 +249,6 @@ void uart_event_handle(app_uart_evt_t * p_event)
                     SEGGER_RTT_WriteString(0, "Ready to send data over uart characteristic.\n");
                     uart_characteristic_update(&m_data_service, data_array);
                     NRF_LOG_HEXDUMP_DEBUG(data_array, index);
-/*
-                    do
-                    {
-                        uint16_t length = (uint16_t)index;
-                        //err_code = ble_nus_data_send(&m_nus, data_array, &length, m_conn_handle);
-                        if ((err_code != NRF_ERROR_INVALID_STATE) &&
-                            (err_code != NRF_ERROR_RESOURCES) &&
-                            (err_code != NRF_ERROR_NOT_FOUND))
-                        {
-                            APP_ERROR_CHECK(err_code);
-                        }
-                    } while (err_code == NRF_ERROR_RESOURCES);
-*/
                 }
 
                 index = 0;
@@ -289,8 +342,14 @@ static void pm_evt_handler(pm_evt_t const * p_evt)
 static void timer_timeout_handler(void * p_context)
 {
     // OUR_JOB: Step 3.F, Update temperature and characteristic value.
-    nrf_gpio_pin_toggle(26);
+    //nrf_gpio_pin_toggle(26);
     MPU6050_read_sensor_data();
+    saadc_sampling_trigger();
+    uint8_t send_buff[4];
+    MPU6050_get_temperature(send_buff);
+    send_buff[2] = (uint8_t)((Vbatt >> 8) & 0xff);
+    send_buff[3] = (uint8_t)(Vbatt & 0xff);
+    temp_temperature_characteristic_update(&m_ts_service, send_buff);
 }
 
 
@@ -411,31 +470,7 @@ static void services_init(void)
     APP_ERROR_CHECK(err_code);
 
     data_service_init(&m_data_service);
-    //temp_service_init(&m_ts_service);
-
-
-    /* YOUR_JOB: Add code to initialize the services used by the application.
-       ble_xxs_init_t                     xxs_init;
-       ble_yys_init_t                     yys_init;
-
-       // Initialize XXX Service.
-       memset(&xxs_init, 0, sizeof(xxs_init));
-
-       xxs_init.evt_handler                = NULL;
-       xxs_init.is_xxx_notify_supported    = true;
-       xxs_init.ble_xx_initial_value.level = 100;
-
-       err_code = ble_bas_init(&m_xxs, &xxs_init);
-       APP_ERROR_CHECK(err_code);
-
-       // Initialize YYY Service.
-       memset(&yys_init, 0, sizeof(yys_init));
-       yys_init.evt_handler                  = on_yys_evt;
-       yys_init.ble_yy_initial_value.counter = 0;
-
-       err_code = ble_yy_service_init(&yys_init, &yy_init);
-       APP_ERROR_CHECK(err_code);
-     */
+    temp_service_init(&m_ts_service);
 }
 
 
@@ -506,6 +541,18 @@ static void application_timers_start(void)
 
 }
 
+/**@brief Function for starting timers.
+ */
+static void application_timers_stop(void)
+{
+    /* YOUR_JOB: Start your timers. below is an example of how to start a timer.
+    */
+       ret_code_t err_code;
+       err_code = app_timer_stop(m_timer_id);
+       APP_ERROR_CHECK(err_code);
+
+}
+
 
 /**@brief Function for putting the chip into sleep mode.
  *
@@ -569,11 +616,13 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
     {
         case BLE_GAP_EVT_DISCONNECTED:
             NRF_LOG_INFO("Disconnected.");
+            application_timers_stop();
             // LED indication will be changed when advertising starts.
             break;
 
         case BLE_GAP_EVT_CONNECTED:
             NRF_LOG_INFO("Connected.");
+            application_timers_start();
             err_code = bsp_indication_set(BSP_INDICATE_CONNECTED);
             APP_ERROR_CHECK(err_code);
             m_conn_handle = p_ble_evt->evt.gap_evt.conn_handle;
@@ -642,6 +691,8 @@ static void ble_stack_init(void)
     NRF_SDH_BLE_OBSERVER(m_ble_observer, APP_BLE_OBSERVER_PRIO, ble_evt_handler, NULL);
     // Data Service even hadnler
     NRF_SDH_BLE_OBSERVER(m_data_service_observer, APP_BLE_OBSERVER_PRIO, ble_data_service_on_ble_evt, (void*) &m_data_service);
+    // Temperature Service even hadnler
+    NRF_SDH_BLE_OBSERVER(m_temp_service_observer, APP_BLE_OBSERVER_PRIO, ble_temp_service_on_ble_evt, (void*) &m_ts_service);
 }
 
 
@@ -763,7 +814,7 @@ static void advertising_init(void)
     /* Scan responce Data*/
     ble_advdata_manuf_data_t  manuf_data_response;
     uint8_t                     data_response[] = "Project MPOA2018";
-    manuf_data_response.company_identifier      = 0x0059;
+    manuf_data_response.company_identifier      = 0x0059;                 //NORDIC
     manuf_data_response.data.p_data             = data_response;
     manuf_data_response.data.size               = sizeof(data_response);
     init.srdata.name_type                       = BLE_ADVDATA_NO_NAME;
@@ -867,6 +918,7 @@ int main(void)
     log_init();
     timers_init();
     buttons_leds_init(&erase_bonds);
+    saadc_init();
     power_management_init();
     ble_stack_init();
     gap_params_init();
@@ -878,10 +930,12 @@ int main(void)
 
     // Start execution.
     NRF_LOG_INFO("Template example started.");
-   application_timers_start();
+    
+
 
     advertising_start(erase_bonds);
     /******************************/
+    
     // Enter main loop.
     for (;;)
     {

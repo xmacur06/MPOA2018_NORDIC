@@ -25,7 +25,7 @@ typedef struct
     uint16_t                    service_handle;     /**< Handle of Our Service (as provided by the BLE stack). */
                                                     /**service_handle is a number identifying this particular service and is assigned by the SoftDevice**/
     ble_gatts_char_handles_t    char_handles;       /**relevant handles for our characteristic*/
-    ble_gatts_char_handles_t    char_led_handles;       /**relevant handles for our characteristic*/
+    ble_gatts_char_handles_t    char_data_handles;       /**relevant handles for our characteristic*/
 }ble_ts_t;
 
 #define BLE_TS_DEF(_name) \
@@ -53,6 +53,6 @@ void temp_service_init(ble_ts_t * p_our_service);
  * @param[in]   p_our_service                     Our Service structure.
  * @param[in]   characteristic_value     New characteristic value.
  */
-void temp_temperature_characteristic_update(ble_ts_t *p_our_service, int32_t *temperature_value);
+void temp_temperature_characteristic_update(ble_ts_t *p_our_service, uint8_t *temperature_value);
 
 #endif  /* _ OUR_SERVICE_H__ */
