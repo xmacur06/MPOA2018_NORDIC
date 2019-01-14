@@ -84,7 +84,7 @@
 #include "nrf_pwr_mgmt.h"
 
 #include "data_service.h"
-#include "temp_service.h"
+#include "sensor_service.h"
 
 #if defined (UART_PRESENT)
 #include "nrf_uart.h"

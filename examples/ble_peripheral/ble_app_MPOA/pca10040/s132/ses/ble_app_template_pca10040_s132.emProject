@@ -104,12 +104,12 @@
     <folder Name="Application">
       <file file_name="../../../main.c" />
       <file file_name="../config/sdk_config.h" />
-      <file file_name="../../../temp_service.c" />
-      <file file_name="../../../temp_service.h" />
       <file file_name="../../../data_service.c" />
       <file file_name="../../../data_service.h" />
       <file file_name="../../../MPU6050_driver.c" />
       <file file_name="../../../MPU6050_driver.h" />
+      <file file_name="../../../sensor_service.c" />
+      <file file_name="../../../sensor_service.h" />
     </folder>
     <folder Name="nRF_Segger_RTT">
       <file file_name="../../../../../../external/segger_rtt/SEGGER_RTT.c" />
