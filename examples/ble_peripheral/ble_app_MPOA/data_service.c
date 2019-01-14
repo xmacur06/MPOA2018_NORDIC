@@ -29,6 +29,12 @@ static uint32_t led_char_add(ble_service_data_t * p_data_service);
 /*******************************************************************/
 
 
+/**@brief Function for handle UART characteristic 
+ *
+ * @param[in]   data               Pointer to data.
+ * @param[in]   len                Length of data buffer.
+ *
+ */
 static void ble_uart_tranciever_handler(uint8_t const * data, uint8_t len)
 {
     uint32_t err_code;
@@ -47,6 +53,13 @@ static void ble_uart_tranciever_handler(uint8_t const * data, uint8_t len)
         while (app_uart_put('\n') == NRF_ERROR_BUSY);
 }
 
+/**@brief Function for handle LED characteristic 
+ *
+ * @param[in]   p_data_service     Pointer to data service struct.
+ * @param[in]   data               Pointer to data.
+ * @param[in]   len                Length of data buffer.
+ *
+ */
 static void ble_state_led_handler(uint8_t const * data, uint8_t len, ble_service_data_t * p_data_service)
 {
   //Clear LED
@@ -77,6 +90,14 @@ static void ble_state_led_handler(uint8_t const * data, uint8_t len, ble_service
   }
 }
 
+/**@brief Function for recognization of coming request 
+ *
+ * @param[in]   p_evt_write        Pointer to struct with handle number.
+ * @param[in]   p_data_service     Pointer to data service struct.
+ * @param[in]   data               Pointer to data.
+ * @param[in]   len                Length of data buffer.
+ *
+ */
 static void ble_data_char_handler(ble_gatts_evt_write_t const * p_evt_write, ble_service_data_t * p_data_service, uint8_t const * data,  uint8_t len)
 {
   if(p_evt_write->handle == p_data_service->char_uart_handle.value_handle)
@@ -138,7 +159,12 @@ static void ble_data_char_handler(ble_gatts_evt_write_t const * p_evt_write, ble
 
 
 
-//Declaration of a function that will take care of some housekeeping of ble connections related to our service and characteristic
+/**@brief Function that will take care of some housekeeping of ble connections related to our service and characteristic 
+ *
+ * @param[in]   p_ble_evt        Pointer to ble_event_struct.
+ * @param[in]   p_context        Pointer to our service struct.
+ *
+ */
 void ble_data_service_on_ble_evt(ble_evt_t const * p_ble_evt, void * p_context)
 {
   ble_service_data_t * p_data_service =(ble_service_data_t *) p_context; 
@@ -359,10 +385,15 @@ void data_service_init(ble_service_data_t * p_data_service)
 }
 
 
-//Function to be called when updating characteristic value
+/**@brief Function to be called when updating characteristic value
+ *
+ * @param[in]   p_our_service        Our Service structure.
+ *
+ */
 void led_characteristic_update(ble_service_data_t *p_our_service)
 {
     // Update characteristic value
+    //Check if Connected and if notification is ON
     if ((p_our_service->conn_handle != BLE_CONN_HANDLE_INVALID) && 
         (p_our_service->fs_t.f_notifi_LED_ON == true))
     {
@@ -382,13 +413,20 @@ void led_characteristic_update(ble_service_data_t *p_our_service)
         
         err_code = sd_ble_gatts_hvx(p_our_service->conn_handle, &hvx_params);
         SEGGER_RTT_printf(0, "HVX led status: %d\n", err_code);
-        //APP_ERROR_CHECK(err_code);
+        APP_ERROR_CHECK(err_code);
     }
 }
 
+
+/**@brief Function to be called when updating characteristic value
+ *
+ * @param[in]   p_our_service        Our Service structure.
+ * @param[in]   p_buff               Pointer to data buffer.
+ *
+ */
 void uart_characteristic_update(ble_service_data_t *p_our_service, uint8_t *p_buff)
 {
-    //uint16_t data_len = sizeof(p_buff);
+    //uint16_t data_len = sizeof(p_buff)/sizeof(uint8_t);  **kvuli hlavicce**
     uint16_t data_len = 18;
     if(data_len < UART_MAX_LEN - 1)
     {
@@ -409,7 +447,7 @@ void uart_characteristic_update(ble_service_data_t *p_our_service, uint8_t *p_bu
            
            err_code = sd_ble_gatts_hvx(p_our_service->conn_handle, &hvx_params);
            SEGGER_RTT_printf(0, "HVX uart status: %d\n", err_code);
-           //APP_ERROR_CHECK(err_code);
+           APP_ERROR_CHECK(err_code);
        }
     }
 }

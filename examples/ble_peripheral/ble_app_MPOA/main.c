@@ -148,6 +148,7 @@ uint16_t Vbatt;
 static uint16_t m_conn_handle = BLE_CONN_HANDLE_INVALID;                        /**< Handle of the current connection. */
 
 /***ADC****/
+/************************************************************************************************************************/
 #define VREF    3.6
 #define BITS10  1024
 #define SAMPLES_IN_BUFFER 1
@@ -207,13 +208,11 @@ void saadc_sampling_trigger(void)
     err_code = nrf_drv_saadc_sample(); // Check error
     APP_ERROR_CHECK(err_code);
 }
+/************************************************************************************************************************/
 /***END ADC******/
 
-/* YOUR_JOB: Declare all services structure your application is using
- *  BLE_XYZ_DEF(m_xyz);
- */
 
-// YOUR_JOB: Use UUIDs for service(s) used in your application.
+//Use UUIDs for service(s) used in your application.
 static ble_uuid_t m_adv_uuids[] =                                               /**< Universally unique service identifiers. */
 {
     {BLE_UUID_DEVICE_INFORMATION_SERVICE, BLE_UUID_TYPE_BLE}
@@ -222,6 +221,8 @@ static ble_uuid_t m_adv_uuids[] =                                               
 
 static void advertising_start(bool erase_bonds);
 
+/***UART***/
+/************************************************************************************************************************/
 /**@brief   Function for handling app_uart events.
  *
  * @details This function will receive a single character from the app_uart module and append it to
@@ -301,6 +302,8 @@ static void uart_init(void)
     SEGGER_RTT_printf(0, "UART error: %d\n",err_code);
     APP_ERROR_CHECK(err_code);
 }
+/***END UART***/
+/************************************************************************************************************************/
 
 /**@brief Callback function for asserts in the SoftDevice.
  *
@@ -350,7 +353,7 @@ static void timer_timeout_handler(void * p_context)
     MPU6050_get_temperature(send_buff);
     send_buff[2] = (uint8_t)((Vbatt >> 8) & 0xff);
     send_buff[3] = (uint8_t)(Vbatt & 0xff);
-    temp_temperature_characteristic_update(&m_ts_service, send_buff);
+    sensor_characteristic_update(&m_ts_service, send_buff);
 }
 
 
@@ -430,33 +433,6 @@ static void nrf_qwr_error_handler(uint32_t nrf_error)
 }
 
 
-/**@brief Function for handling the YYY Service events.
- * YOUR_JOB implement a service handler function depending on the event the service you are using can generate
- *
- * @details This function will be called for all YY Service events which are passed to
- *          the application.
- *
- * @param[in]   p_yy_service   YY Service structure.
- * @param[in]   p_evt          Event received from the YY Service.
- *
- *
-static void on_yys_evt(ble_yy_service_t     * p_yy_service,
-                       ble_yy_service_evt_t * p_evt)
-{
-    switch (p_evt->evt_type)
-    {
-        case BLE_YY_NAME_EVT_WRITE:
-            APPL_LOG("[APPL]: charact written with value %s. ", p_evt->params.char_xx.value.p_str);
-            break;
-
-        default:
-            // No implementation needed.
-            break;
-    }
-}
-*/
-
-
 /**@brief Function for initializing services that will be used by the application.
  */
 static void services_init(void)
@@ -471,7 +447,7 @@ static void services_init(void)
     APP_ERROR_CHECK(err_code);
 
     data_service_init(&m_data_service);
-    temp_service_init(&m_ts_service);
+    sensor_service_init(&m_ts_service);
 }
 
 
@@ -693,7 +669,7 @@ static void ble_stack_init(void)
     // Data Service even hadnler
     NRF_SDH_BLE_OBSERVER(m_data_service_observer, APP_BLE_OBSERVER_PRIO, ble_data_service_on_ble_evt, (void*) &m_data_service);
     // Temperature Service even hadnler
-    NRF_SDH_BLE_OBSERVER(m_temp_service_observer, APP_BLE_OBSERVER_PRIO, ble_temp_service_on_ble_evt, (void*) &m_ts_service);
+    NRF_SDH_BLE_OBSERVER(m_temp_service_observer, APP_BLE_OBSERVER_PRIO, ble_sensor_service_on_ble_evt, (void*) &m_ts_service);
 }
 
 
@@ -931,8 +907,6 @@ int main(void)
 
     // Start execution.
     NRF_LOG_INFO("Template example started.");
-    
-
 
     advertising_start(erase_bonds);
     /******************************/

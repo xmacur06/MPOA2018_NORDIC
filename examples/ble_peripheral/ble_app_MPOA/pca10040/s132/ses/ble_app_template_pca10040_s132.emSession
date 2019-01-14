@@ -60,12 +60,11 @@
   <Watches active="0" update="Never"/>
  </Watch4>
  <Files>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="912" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../main.c" selected="1" top="884" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="62" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../temp_service.c" selected="0" top="79" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="12" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../temp_service.h" selected="0" top="0" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="99" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../../../../components/libraries/util/app_error_weak.c" selected="0" top="71" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="391" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../data_service.c" selected="0" top="366" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="14" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../data_service.h" selected="0" top="0" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="16" y="901" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../main.c" selected="1" top="856" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="80" y="167" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../sensor_service.c" selected="0" top="132" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="36" y="37" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../sensor_service.h" selected="0" top="0" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="420" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../data_service.c" selected="0" top="396" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="0" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../MPU6050_driver.c" selected="0" top="57" codecName="Default"/>
  </Files>
- <ARMCrossStudioWindow activeProject="ble_app_template_pca10040_s132" fileDialogDefaultFilter="*.c" autoConnectTarget="J-Link" buildConfiguration="Release" debugSearchFileMap="" fileDialogInitialDirectory="C:/Programy/SEGGER/MPOA_git/MPOA2018_NORDIC/modules/nrfx/drivers/src" debugSearchPath="" autoConnectCapabilities="3711"/>
+ <ARMCrossStudioWindow activeProject="ble_app_template_pca10040_s132" fileDialogDefaultFilter="" autoConnectTarget="J-Link" buildConfiguration="Release" debugSearchFileMap="" fileDialogInitialDirectory="C:/Programy/SEGGER/MPOA_git/MPOA2018_NORDIC/examples/ble_peripheral/ble_app_MPOA" debugSearchPath="" autoConnectCapabilities="3199"/>
 </session>
