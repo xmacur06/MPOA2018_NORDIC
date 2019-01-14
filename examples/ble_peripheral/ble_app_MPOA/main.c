@@ -127,7 +127,7 @@
 #define SEC_PARAM_MAX_KEY_SIZE          16                                      /**< Maximum encryption key size. */
 
 #define TX_POWER                        (-16)
-#define SEC_CHAR_TIMER_INTERVAL         APP_TIMER_TICKS(5000)                   // 5000 ms intervals
+#define SEC_CHAR_TIMER_INTERVAL         APP_TIMER_TICKS(1000)                   // 5000 ms intervals
 
 #define DEAD_BEEF                       0xDEADBEEF                              /**< Value used as error code on stack dump, can be used to identify stack location on stack unwind. */
 
@@ -247,6 +247,7 @@ void uart_event_handle(app_uart_evt_t * p_event)
                 if (index > 1)
                 {
                     SEGGER_RTT_WriteString(0, "Ready to send data over uart characteristic.\n");
+                    SEGGER_RTT_printf(0, "UART send: %s.\n", data_array);
                     uart_characteristic_update(&m_data_service, data_array);
                     NRF_LOG_HEXDUMP_DEBUG(data_array, index);
                 }

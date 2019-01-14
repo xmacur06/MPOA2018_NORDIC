@@ -388,7 +388,8 @@ void led_characteristic_update(ble_service_data_t *p_our_service)
 
 void uart_characteristic_update(ble_service_data_t *p_our_service, uint8_t *p_buff)
 {
-    uint16_t data_len = sizeof(p_buff);
+    //uint16_t data_len = sizeof(p_buff);
+    uint16_t data_len = 18;
     if(data_len < UART_MAX_LEN - 1)
     {
        // Update characteristic value
